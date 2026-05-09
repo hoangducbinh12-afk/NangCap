@@ -2,22 +2,42 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- CẤU HÌNH GIAO DIỆN ---
+# --- CẤU HÌNH GIAO DIỆN SIÊU TINH GỌN ---
 st.set_page_config(page_title="18 BIEN PRO", layout="centered")
 
-# CSS để làm đẹp giao diện mà không gây lỗi hiển thị code
 st.markdown("""
     <style>
-    .block-container { max-width: 550px !important; padding-top: 1rem !important; }
-    .stTable td, .stTable th { font-size: 11px !important; padding: 2px !important; text-align: center !important; font-weight: bold !important; border: 1px solid #eee !important; }
-    .dan-box-1 { background-color: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 12px; font-weight: bold; margin-top:5px; }
-    .dan-box-2 { background-color: #e3f2fd; padding: 10px; border-radius: 5px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 12px; font-weight: bold; margin-top:5px; }
-    .root-label { font-size: 12px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 8px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ffe3e3; }
-    div[data-testid="stExpander"] p { font-size: 13px !important; font-weight: bold !important; }
+    /* Thu nhỏ toàn bộ layout */
+    .block-container { max-width: 500px !important; padding-top: 1rem !important; }
+    
+    /* Thu nhỏ tiêu đề để không bị xuống dòng */
+    .custom-title { text-align: center; color: #1E3A8A; font-size: 18px; font-weight: bold; margin-bottom: 10px; line-height: 1.2; }
+    
+    /* Thu nhỏ nút bấm +/- siêu gọn */
+    .stButton>button { 
+        width: 100% !important; 
+        height: 28px !important; 
+        padding: 0px !important; 
+        font-size: 14px !important; 
+        border-radius: 4px !important; 
+    }
+    
+    /* Bảng số siêu nhỏ cho Mobile */
+    .stTable td, .stTable th { font-size: 10px !important; padding: 1px !important; text-align: center !important; font-weight: bold !important; border: 1px solid #eee !important; }
+    
+    /* Box dàn số */
+    .dan-box-1 { background-color: #e8f5e9; padding: 8px; border-radius: 5px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 11px; font-weight: bold; margin-top:2px; }
+    .dan-box-2 { background-color: #e3f2fd; padding: 8px; border-radius: 5px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 11px; font-weight: bold; margin-top:2px; }
+    
+    /* Root label tinh gọn */
+    .root-label { font-size: 11px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 4px; border-radius: 5px; margin-bottom: 8px; border: 1px solid #ffe3e3; }
+    
+    /* Nhãn ô nhập liệu */
+    label { font-size: 11px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DỮ LIỆU ---
+# --- DỮ LIỆU GỐC ---
 BO_MAP = {"00":[0,5,50,55],"01":[1,10,6,60,51,15,56,65],"02":[2,20,7,70,52,25,57,75],"03":[3,30,8,80,53,35,58,85],"04":[4,40,9,90,54,45,59,95],"11":[11,16,61,66],"12":[12,21,17,71,62,26,67,76],"13":[13,31,18,81,63,36,68,86],"14":[14,41,19,91,64,46,69,96],"22":[22,27,72,77],"23":[23,32,28,82,73,37,78,87],"24":[24,42,29,92,74,47,79,97],"33":[33,38,83,88],"34":[34,43,39,93,84,48,89,98],"44":[44,49,94,99]}
 SO_THUONG = [2,3,4,6,8,13,15,17,18,19,20,24,25,26,28,30,31,35,37,39,40,42,46,47,48,51,52,53,57,59,60,62,64,68,69,71,73,74,75,79,80,81,82,84,86,91,93,95,96,97]
 ROOT_DATA = {
@@ -71,8 +91,8 @@ def cap_nhat_diem():
     st.session_state.u_cl[duv%2]=0; st.session_state.u_cl[(duv+1)%2]+=1
     st.session_state.so_he[1 if n not in SO_THUONG else 0]=0; st.session_state.so_he[0 if n not in SO_THUONG else 1]+=1
 
-# --- UI CHÍNH ---
-st.title("💎 HE THONG 18 BIEN PRO")
+# --- UI ---
+st.markdown("<div class='custom-title'>💎 HE THONG 18 BIEN PRO</div>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("⚙️ QUAN LY")
@@ -89,7 +109,7 @@ with st.sidebar:
             if st.button("🗑️ XOA"): del st.session_state.db_cloud[sel]; st.rerun()
     if st.button("❌ RESET ALL"): st.session_state.clear(); st.rerun()
 
-# NHẬP LIỆU
+# NHẬP LIỆU (1 HÀNG)
 c1, c2, c3 = st.columns([1.5, 1.5, 1.2])
 with c1: st.text_input("GDB vua no:", value="000000", key="gdb_in")
 with c2: st.text_input("Ngay:", "09092009", key="date_in")
@@ -102,7 +122,7 @@ with c3:
     with ck3: 
         if st.button("➕", key="kp"): st.session_state.ky_quay += 1; st.rerun()
 
-st.markdown(f"<div class='root-label'>Root Ngay: {st.session_state.rd} | Root Ky: {st.session_state.rk} | Root GDB: {st.session_state.rg}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='root-label'>Root: Ngay {st.session_state.rd} | Ky {st.session_state.rk} | GDB {st.session_state.rg}</div>", unsafe_allow_html=True)
 st.button("🔥 CAP NHAT TONG LUC", on_click=cap_nhat_diem, type="primary", use_container_width=True)
 
 tabs = st.tabs(["⚡ Dan", "📊 Bang A", "🔢 Root", "🛠️ Sua"])
@@ -118,10 +138,10 @@ with tabs[0]:
         calc.append({"s": f"{d}{du}", "d": sk + sr})
     df_f = pd.DataFrame(calc).sort_values(by=["d", "s"])
     
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
+    col1, col2 = st.columns(2)
+    with col1:
         st.write("Dan 1:")
-        c1a, c1b, c1c = st.columns([1,1.5,1])
+        c1a, c1b, c1c = st.columns([1,2,1])
         with c1a: 
             if st.button("➖", key="d1m"): st.session_state.n1 -= 1; st.rerun()
         with c1b: st.session_state.n1 = st.number_input("N1", value=st.session_state.n1, label_visibility="collapsed")
@@ -129,10 +149,10 @@ with tabs[0]:
             if st.button("➕", key="d1p"): st.session_state.n1 += 1; st.rerun()
         d1_s = ", ".join(df_f.head(st.session_state.n1)["s"].tolist())
         st.markdown(f"<div class='dan-box-1'>{d1_s}</div>", unsafe_allow_html=True)
-        if st.button("📋 COPY D1"): st.write(f'<script>navigator.clipboard.writeText("{d1_s}")</script>', unsafe_allow_html=True); st.toast("Copied D1")
-    with col_d2:
+        if st.button("📋 COPY D1"): st.write(f'<script>navigator.clipboard.writeText("{d1_s}")</script>', unsafe_allow_html=True); st.toast("D1")
+    with col2:
         st.write("Dan 2:")
-        c2a, c2b, c2c = st.columns([1,1.5,1])
+        c2a, c2b, c2c = st.columns([1,2,1])
         with c2a:
             if st.button("➖", key="d2m"): st.session_state.n2 -= 1; st.rerun()
         with c2b: st.session_state.n2 = st.number_input("N2", value=st.session_state.n2, label_visibility="collapsed")
@@ -140,22 +160,21 @@ with tabs[0]:
             if st.button("➕", key="d2p"): st.session_state.n2 += 1; st.rerun()
         d2_s = ", ".join(df_f.head(st.session_state.n2)["s"].tolist())
         st.markdown(f"<div class='dan-box-2'>{d2_s}</div>", unsafe_allow_html=True)
-        if st.button("📋 COPY D2"): st.write(f'<script>navigator.clipboard.writeText("{d2_s}")</script>', unsafe_allow_html=True); st.toast("Copied D2")
+        if st.button("📋 COPY D2"): st.write(f'<script>navigator.clipboard.writeText("{d2_s}")</script>', unsafe_allow_html=True); st.toast("D2")
 
 with tabs[1]:
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
-    def show_r(lbl, k, cat, names):
-        st.write(f"**{lbl}**")
+    st.write("**CHI TIET KHAN (K) & ROOT (R)**")
+    def show_r(lbl, k, cat):
         khan = st.session_state[k]
-        rt = [sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(10)] if cat else [0]*len(khan)
-        st.markdown('<div class="history-container">', unsafe_allow_html=True)
-        st.table(pd.DataFrame([khan, rt], columns=names, index=["K", "R"]))
-        st.markdown('</div>', unsafe_allow_html=True)
+        rt = [sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(10)]
+        st.write(f"*{lbl}*")
+        st.table(pd.DataFrame([khan, rt], columns=[str(i) for i in range(10)], index=["K", "R"]))
 
     for lbl, k, cat in [("DAU","dau","dau"),("DUOI","duoi","duoi"),("TONG","tong","tong"),("HIEU","hieu","hieu"),("CHAM","cham","cham")]:
-        show_r(lbl, k, cat, range(10))
+        show_r(lbl, k, cat)
     
-    st.write("**8 BIEN PHU 50/50**")
+    st.write("**8 BIEN PHU MOI**")
     st.table(pd.DataFrame({"DAU C/L":st.session_state.d_cl, "DUOI C/L":st.session_state.u_cl, "HE SO":st.session_state.so_he}, index=["0/CHAN/THG","1/LE/HE"]))
 
 with tabs[2]:
@@ -166,15 +185,10 @@ with tabs[2]:
             st.table(pd.DataFrame(ck).T)
 
 with tabs[3]:
-    st.write("**SUA TAY 18 BIEN (KHONG DAU)**")
+    st.write("**SUA TAY KHONG DAU**")
     if st.button("💾 LUU TAT CA"): st.rerun()
     for k, lbl in [('dau','DAU'),('duoi','DUOI'),('tong','TONG'),('hieu','HIEU'),('cham','CHAM')]:
         with st.expander(f"SUA {lbl}"):
             cols = st.columns(5)
             for i in range(10):
                 with cols[i%5]: st.session_state[k][i] = st.number_input(f"{i}", value=st.session_state[k][i], key=f"e_{k}_{i}")
-    with st.expander("SUA 8 BIEN PHU"):
-        c_p1, c_p2 = st.columns(2)
-        with c_p1:
-            st.session_state.d_cl = [st.number_input("DAU CHAN", value=st.session_state.d_cl[0]), st.number_input("DAU LE", value=st.session_state.d_cl[1])]
-            st.session_state.so_he = [st.number_input("THUONG", value=st.session_state.so_he[0]), st.number_input("HE", value=st.session_state.so_he[1])]
