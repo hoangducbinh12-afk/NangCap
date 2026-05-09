@@ -2,38 +2,38 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- CAU HINH GIAO DIEN SIÊU GON ---
-st.set_page_config(page_title="ROOT 18 BIEN PRO", layout="centered")
+# --- CẤU HÌNH GIAO DIỆN SIÊU CHUẨN ---
+st.set_page_config(page_title="ROOT 18 BIEN PRO", layout="wide")
 
 st.markdown("""
     <style>
-    /* Ép gọn container chính */
-    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; max-width: 800px !important; }
+    /* Giới hạn chiều ngang container chính cho cân đối */
+    .block-container { max-width: 900px !important; padding-top: 2rem !important; }
     
-    /* Thu nhỏ bảng A và B */
+    /* Tiêu đề chính */
+    .main-title { text-align: center; font-size: 24px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; }
+    
+    /* Bảng A và B: Không dấu, font sắc nét, không bị đè hàng */
     .stTable td, .stTable th { 
-        font-size: 11px !important; 
-        padding: 0px 2px !important; 
-        height: 20px !important;
+        font-size: 13px !important; 
+        padding: 6px 4px !important; 
         text-align: center !important; 
+        line-height: 1.2 !important;
     }
     
-    /* Box dàn số chuẩn màu */
-    .dan-box-1 { background-color: #e8f5e9; padding: 8px; border-radius: 4px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 13px; font-weight: bold; margin-bottom: 2px; }
-    .dan-box-2 { background-color: #e3f2fd; padding: 8px; border-radius: 4px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+    /* Box dàn số màu sắc */
+    .dan-box-1 { background-color: #e8f5e9; padding: 12px; border-radius: 6px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 15px; font-weight: bold; margin-bottom: 10px; }
+    .dan-box-2 { background-color: #e3f2fd; padding: 12px; border-radius: 6px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 15px; font-weight: bold; margin-bottom: 10px; }
     
     /* Root display */
-    .root-display { text-align: center; background: #fafafa; padding: 3px; border-radius: 5px; border: 1px solid #eee; margin-bottom: 8px; font-weight: bold; color: #d32f2f; font-size: 11px; }
+    .root-display { text-align: center; background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #ffe3e3; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 14px; }
     
-    /* Nút bấm */
-    .stButton>button { width: 100%; border-radius: 4px; height: 32px; font-size: 12px; }
-    
-    /* Nhãn input nhỏ lại */
-    label { font-size: 12px !important; font-weight: bold !important; margin-bottom: -15px !important; }
+    /* Input label */
+    label { font-size: 14px !important; font-weight: bold !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DU LIEU ROOT ---
+# --- DỮ LIỆU ROOT ---
 ROOT_DATA = {
     1: {"cham": [1,6,0,5,2,7,3,8,4,9], "dau": [1,6,0,5,4,9,2,7,3,8], "duoi": [1,6,2,7,0,5,4,9,3,8], "tong": [1,6,2,7,4,9,0,5,3,8], "hieu": [0,5,1,6,2,7,4,9,3,8]},
     2: {"cham": [2,7,1,6,3,8,4,9,0,5], "dau": [2,7,1,6,5,0,3,8,4,9], "duoi": [2,7,3,8,1,6,5,0,4,9], "tong": [2,7,3,8,5,0,1,6,4,9], "hieu": [0,5,2,7,1,6,3,8,4,9]},
@@ -63,7 +63,7 @@ def find_idx(n, mapping):
         if n in nums: return i
     return 0
 
-# --- KHOI TAO ---
+# --- KHỞI TẠO ---
 if 'dau' not in st.session_state:
     for k in ['dau','duoi','tong','hieu','cham']: st.session_state[k] = [0]*10
     st.session_state.bo = [0]*15
@@ -76,12 +76,12 @@ def cap_nhat():
     raw = st.session_state.gdb_in
     if not raw or raw == "000000": return
     n = int(raw[-2:])
-    dv, duv, tv, hv = n//10, n%10, (n//10+n%10)%10, (n//10-n%10+10)%10
+    dv, duv = n//10, n%10
     st.session_state.rd = get_root(st.session_state.date_in)
     st.session_state.rk = get_root(st.session_state.ky_in)
     st.session_state.rg = get_root(raw)
-    
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
+    
     tmp = []
     for i in range(100):
         d, du, t, h = i//10, i%10, (i//10+i%10)%10, (i//10-i%10+10)%10
@@ -98,20 +98,21 @@ def cap_nhat():
     df = pd.DataFrame(tmp).sort_values(by=["d","s"], ascending=[True, True]).reset_index(drop=True)
     st.session_state.ls.insert(0, {"SO": f"{n:02d}", "HANG": df[df['s']==f"{n:02d}"].index[0]+1, "DIEM": df[df['s']==f"{n:02d}"].iloc[0]['d']})
     
+    # Cập nhật điểm Khan
     for i in range(10):
         st.session_state.dau[i] = 0 if i==dv else st.session_state.dau[i]+1
         st.session_state.duoi[i] = 0 if i==duv else st.session_state.duoi[i]+1
-        st.session_state.tong[i] = 0 if i==tv else st.session_state.tong[i]+1
-        st.session_state.hieu[i] = 0 if i==hv else st.session_state.hieu[i]+1
+        st.session_state.tong[i] = 0 if i==((dv+duv)%10) else st.session_state.tong[i]+1
+        st.session_state.hieu[i] = 0 if i==((dv-duv+10)%10) else st.session_state.hieu[i]+1
         st.session_state.cham[i] = 0 if (i==dv or i==duv) else st.session_state.cham[i]+1
     for i in range(15): st.session_state.bo[i] = 0 if i==find_idx(n, BO_MAP) else st.session_state.bo[i]+1
     st.session_state.d_cl[dv%2]=0; st.session_state.d_cl[(dv+1)%2]+=1
     st.session_state.u_cl[duv%2]=0; st.session_state.u_cl[(duv+1)%2]+=1
-    st.session_state.t_cl[tv%2]=0; st.session_state.t_cl[(tv+1)%2]+=1
+    st.session_state.t_cl[((dv+duv)%10)%2]=0; st.session_state.t_cl[(((dv+duv)%10)+1)%2]+=1
     st.session_state.d_tb[1 if dv>=5 else 0]=0; st.session_state.d_tb[0 if dv>=5 else 1]+=1
     st.session_state.u_tb[1 if duv>=5 else 0]=0; st.session_state.u_tb[0 if duv>=5 else 1]+=1
-    st.session_state.t_tb[1 if tv>=5 else 0]=0; st.session_state.t_tb[0 if tv>=5 else 1]+=1
-    st.session_state.h_tb[1 if hv>=5 else 0]=0; st.session_state.h_tb[0 if hv>=5 else 1]+=1
+    st.session_state.t_tb[1 if ((dv+duv)%10)>=5 else 0]=0; st.session_state.t_tb[0 if ((dv+duv)%10)>=5 else 1]+=1
+    st.session_state.h_tb[1 if ((dv-duv+10)%10)>=5 else 0]=0; st.session_state.h_tb[0 if ((dv-duv+10)%10)>=5 else 1]+=1
     st.session_state.so_he[1 if n not in SO_THUONG else 0]=0; st.session_state.so_he[0 if n not in SO_THUONG else 1]+=1
 
 # --- SIDEBAR ---
@@ -119,7 +120,7 @@ with st.sidebar:
     st.markdown("### ☁️ CLOUD STORAGE")
     if st.button("💾 SAO LƯU DỮ LIỆU"):
         st.session_state.db[datetime.now().strftime("%H:%M:%S")] = {k: list(st.session_state[k]) if isinstance(st.session_state[k], list) else st.session_state[k] for k in st.session_state.keys() if k not in ['db']}
-        st.toast("Đã lưu!")
+        st.success("Đã lưu!")
     if st.session_state.db:
         sel = st.selectbox("Bản lưu:", list(st.session_state.db.keys())[::-1])
         if st.button("🔄 PHỤC HỒI"):
@@ -129,20 +130,20 @@ with st.sidebar:
     if st.button("🗑️ XÓA DỮ LIỆU"): st.session_state.clear(); st.rerun()
 
 # --- MAIN UI ---
-st.markdown("<div class='main-title'>💎 HỆ THỐNG 18 BIẾN PRO</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>💎 HỆ THỐNG THỐNG KÊ 18 BIẾN PRO</div>", unsafe_allow_html=True)
 
-# 3 Ô NHẬP TRÊN 1 HÀNG
-c_gdb, c_date, c_ky = st.columns([1.5, 1.5, 1])
-with c_gdb: st.text_input("GĐB vừa nổ:", value="000000", key="gdb_in")
-with c_date: st.text_input("Ngày:", value="", key="date_in", placeholder="09092009")
-with c_ky: st.number_input("Kỳ quay:", value=st.session_state.ky_in, step=1, key="ky_in")
+# 3 ô nhập cùng hàng
+c1, c2, c3 = st.columns([1.5, 1.5, 1])
+with c1: st.text_input("GĐB vừa nổ:", value="000000", key="gdb_in")
+with c2: st.text_input("Ngày:", value="", key="date_in", placeholder="ddmmyyyy")
+with c3: st.number_input("Kỳ quay:", value=st.session_state.ky_in, step=1, key="ky_in")
 
-st.markdown(f"<div class='root-display'>ROOT Ngày: {st.session_state.rd} | ROOT Kỳ: {st.session_state.rk} | ROOT GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='root-display'>ROOT NGÀY: {st.session_state.rd} | ROOT KỲ: {st.session_state.rk} | ROOT GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
 st.button("🚀 CẬP NHẬT TỔNG LỰC", on_click=cap_nhat, type="primary", use_container_width=True)
 
-t1, t2, t3, t4, t5 = st.tabs(["⚡ Lọc Dàn", "📊 Bảng A", "🎲 Ma Trận B", "🛠️ Sửa Tay", "🕒 Lịch Sử"])
+tabs = st.tabs(["⚡ Lọc Dàn", "📊 Bảng A", "🎲 Ma Trận B", "🛠️ Sửa Tay", "🕒 Lịch Sử"])
 
-with t1:
+with tabs[0]:
     cn1, cn2 = st.columns(2)
     with cn1: num_1 = st.number_input("Số quân Dàn 1:", 1, 100, 10, key="n1")
     with cn2: num_2 = st.number_input("Số quân Dàn 2:", 1, 100, 36, key="n2")
@@ -167,42 +168,59 @@ with t1:
 
     st.markdown(f"**Dàn {num_1} (Thấp nhất):**")
     st.markdown(f"<div class='dan-box-1'>{d1_txt}</div>", unsafe_allow_html=True)
-    st.button("📋 COPY DÀN 1", key="cp1", on_click=lambda: st.toast("Đã copy dàn 1!"))
+    st.button("📋 COPY DÀN 1", key="cp1")
     
     st.markdown(f"**Dàn {num_2} (Thấp nhất):**")
     st.markdown(f"<div class='dan-box-2'>{d2_txt}</div>", unsafe_allow_html=True)
-    st.button("📋 COPY DÀN 2", key="cp2", on_click=lambda: st.toast("Đã copy dàn 2!"))
+    st.button("📋 COPY DÀN 2", key="cp2")
 
-with t2:
-    st.write("**BẢNG A (KHÔNG DẤU BÊN TRONG)**")
+with tabs[1]:
+    st.write("**BẢNG A (ĐIỂM TỔNG HỢP 18 BIẾN - KHÔNG DẤU)**")
+    rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
+    
+    # Bảng 10 biến chính
+    rows = []
     for lbl, k, cat in [("DAU","dau","dau"),("DUOI","duoi","duoi"),("TONG","tong","tong"),("HIEU","hieu","hieu"),("CHAM","cham","cham")]:
         vals = [st.session_state[k][i] + sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(10)]
-        st.write(f"*{lbl}*")
-        st.table(pd.DataFrame([vals], columns=[str(x) for x in range(10)], index=[""]))
+        rows.append(vals)
+    st.table(pd.DataFrame(rows, columns=[str(x) for x in range(10)], index=["DAU", "DUOI", "TONG", "HIEU", "CHAM"]))
     
-    st.write("**BIẾN PHỤ 50/50**")
-    st.write(f"DAU C/L: {st.session_state.d_cl} | DUOI C/L: {st.session_state.u_cl} | TONG C/L: {st.session_state.t_cl} | HE: {st.session_state.so_he}")
+    # Bảng 8 biến phụ
+    st.write("**BIẾN PHỤ 50/50 (KHÔNG DẤU)**")
+    sub_data = {
+        "DAU C/L": st.session_state.d_cl,
+        "DUOI C/L": st.session_state.u_cl,
+        "TONG C/L": st.session_state.t_cl,
+        "DAU B/T": st.session_state.d_tb,
+        "DUOI B/T": st.session_state.u_tb,
+        "TONG B/T": st.session_state.t_tb,
+        "HIEU B/T": st.session_state.h_tb,
+        "HE SO": st.session_state.so_he
+    }
+    st.table(pd.DataFrame(sub_data, index=["0/BE/THUONG", "1/LE/HE"]))
 
-with t3:
-    st.write("**MA TRẬN B (KHÔNG DẤU)**")
+with tabs[2]:
+    st.write("**MA TRẬN B (TỔNG ĐIỂM 00-99 - KHÔNG DẤU)**")
     m_data = []
     for d in range(10):
         row = []
         for du in range(10):
-            idx = d*10+du
             val = next(x for x in f_list if x["s"] == f"{d}{du}")
             row.append(val["d"])
         m_data.append(row)
-    st.table(pd.DataFrame(m_data, columns=[str(i) for i in range(10)], index=[str(i) for i in range(10)]))
+    st.table(pd.DataFrame(m_data, columns=[f"U{i}" for i in range(10)], index=[f"D{i}" for i in range(10)]))
 
-with t4:
+with tabs[3]:
     st.write("**SỬA TAY ĐIỂM KHAN**")
     c1, c2 = st.columns(2)
     with c1:
-        for i in range(10): st.session_state.dau[i] = st.number_input(f"Đầu {i}", value=st.session_state.dau[i])
+        for i in range(10): st.session_state.dau[i] = st.number_input(f"Dau {i}", value=st.session_state.dau[i], step=1)
+        for i in range(10): st.session_state.tong[i] = st.number_input(f"Tong {i}", value=st.session_state.tong[i], step=1)
     with c2:
-        for i in range(10): st.session_state.duoi[i] = st.number_input(f"Đuôi {i}", value=st.session_state.duoi[i])
+        for i in range(10): st.session_state.duoi[i] = st.number_input(f"Duoi {i}", value=st.session_state.duoi[i], step=1)
+        for i in range(10): st.session_state.hieu[i] = st.number_input(f"Hieu {i}", value=st.session_state.hieu[i], step=1)
 
-with t5:
+with tabs[4]:
     if st.session_state.ls:
+        st.write("**LỊCH SỬ KẾT QUẢ**")
         st.table(pd.DataFrame(st.session_state.ls))
