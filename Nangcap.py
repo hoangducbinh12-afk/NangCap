@@ -2,18 +2,19 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- CAU HINH GIAO DIEN MOBILE ---
+# --- CAU HINH GIAO DIEN MOBILE CHUAN ---
 st.set_page_config(page_title="18 BIEN PRO - TOAN DIEN", layout="centered")
 
 st.markdown("""
     <style>
-    .block-container { max-width: 600px !important; padding-top: 1rem !important; }
-    .main-title { text-align: center; color: #1E3A8A; font-size: 20px; font-weight: bold; margin-bottom: 10px; display: block !important; }
+    .block-container { max-width: 500px !important; padding-top: 1rem !important; }
+    .main-title { text-align: center; color: #1E3A8A; font-size: 18px; font-weight: bold; margin-bottom: 15px; display: block !important; }
     .history-container { overflow-x: auto; white-space: nowrap; border: 1px solid #ddd; padding: 5px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 10px; }
     .stTable td, .stTable th { font-size: 11px !important; padding: 2px !important; text-align: center !important; font-weight: bold !important; border: 1px solid #eee !important; }
     .dan-box-1 { background-color: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
     .dan-box-2 { background-color: #e3f2fd; padding: 10px; border-radius: 5px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
-    .root-label { font-size: 11px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 5px; border-radius: 5px; margin-bottom: 10px; }
+    .root-label { font-size: 11px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 5px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ffe3e3; }
+    .stButton>button { width: 100%; height: 35px; border-radius: 5px; font-size: 13px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -56,13 +57,16 @@ if 'dau' not in st.session_state:
     st.session_state.bo = [0]*15; st.session_state.chanle = [0]*4; st.session_state.beto = [0]*4; st.session_state.giap = [0]*12; st.session_state.dang = [0]*5
     for k in ['d_cl','u_cl','t_cl','so_he','d_tb','u_tb','t_tb','h_tb']: st.session_state[k] = [0, 0]
     st.session_state.ls, st.session_state.db_cloud, st.session_state.ky_quay = [], {}, 1
+    st.session_state.num1, st.session_state.num2 = 10, 36
     st.session_state.rd, st.session_state.rk, st.session_state.rg = 0, 0, 0
 
 def cap_nhat_logic():
-    n = st.session_state.so_moi_ve
+    raw = st.session_state.gdb_in
+    if not raw or len(raw) < 2: return
+    n = int(raw[-2:])
     dv, duv = n//10, n%10
     tv, hv = (dv+duv)%10, (dv-duv+10)%10
-    st.session_state.rd, st.session_state.rk, st.session_state.rg = get_root(st.session_state.date_in), get_root(st.session_state.ky_quay), get_root(n)
+    st.session_state.rd, st.session_state.rk, st.session_state.rg = get_root(st.session_state.date_in), get_root(st.session_state.ky_quay), get_root(raw)
     
     for i in range(10):
         st.session_state.dau[i] = 0 if i==dv else st.session_state.dau[i]+1
@@ -85,51 +89,75 @@ def cap_nhat_logic():
     st.session_state.h_tb[1 if hv>=5 else 0]=0; st.session_state.h_tb[0 if hv>=5 else 1]+=1
     st.session_state.so_he[1 if n not in SO_THUONG else 0]=0; st.session_state.so_he[0 if n not in SO_THUONG else 1]+=1
 
-# --- UI ---
+# --- UI TIÊU ĐỀ ---
 st.markdown("<div class='main-title'>💎 HỆ THỐNG 18 BIẾN PRO - TOÀN DIỆN</div>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.header("💾 QUẢN LÝ")
-    if st.button("LƯU CLOUD"):
+    st.header("⚙️ QUẢN LÝ")
+    if st.button("💾 LƯU BẢN SAO"):
         st.session_state.db_cloud[datetime.now().strftime("%H:%M")] = {k: list(st.session_state[k]) if isinstance(st.session_state[k], list) else st.session_state[k] for k in st.session_state.keys() if k != 'db_cloud'}
     if st.session_state.db_cloud:
         sel = st.selectbox("Bản sao:", list(st.session_state.db_cloud.keys())[::-1])
-        if st.button("NẠP"):
-            for k, v in st.session_state.db_cloud[sel].items(): st.session_state[k] = v
-            st.rerun()
-    if st.button("RESET ALL"): st.session_state.clear(); st.rerun()
+        c_load, c_del = st.columns(2)
+        with c_load: 
+            if st.button("🚀 NẠP"):
+                for k, v in st.session_state.db_cloud[sel].items(): st.session_state[k] = v
+                st.rerun()
+        with c_del:
+            if st.button("🗑️ XÓA"):
+                del st.session_state.db_cloud[sel]; st.rerun()
+    st.divider()
+    if st.button("❌ RESET ALL"): st.session_state.clear(); st.rerun()
 
-c1, c2, c3 = st.columns([1, 1, 0.8])
-with c1: st.number_input("Số về:", 0, 99, step=1, format="%02d", key="so_moi_ve")
+# NHẬP LIỆU
+c1, c2, c3 = st.columns([1.2, 1.2, 1])
+with c1: st.text_input("GĐB vừa nổ:", value="000000", key="gdb_in")
 with c2: st.text_input("Ngày:", "09092009", key="date_in")
 with c3: st.number_input("Kỳ:", value=st.session_state.ky_quay, step=1, key="ky_quay")
 
 st.markdown(f"<div class='root-label'>Root Ngày: {st.session_state.rd} | Root Kỳ: {st.session_state.rk} | Root GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
 st.button("🔥 CẬP NHẬT TỔNG LỰC", on_click=cap_nhat_logic, type="primary", use_container_width=True)
 
-t1, t2, t3, t4, t5 = st.tabs(["⚡ Dàn", "📊 Bảng A", "🔢 Root", "🎲 Ma Trận", "🛠️ Sửa"])
+tabs = st.tabs(["⚡ Lọc Dàn", "📊 Bảng A", "🔢 Kiểm Root", "🎲 Ma Trận", "🛠️ Sửa"])
 
-with t1:
+with tabs[0]:
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
     calc = []
     for i in range(100):
-        d, du, t, h = i//10, i%10, (i//10+i%10)%10, (i//10-i%10+10)%10
+        d, du = i//10, i%10
         def gs(r, c, v): return ROOT_DATA[r][c].index(v) if r in ROOT_DATA else 0
-        sr = sum(gs(r, c, v) for r in [rd,rk,rg] for c, v in [("dau",d),("duoi",du),("tong",t),("hieu",h),("cham",d),("cham",du)])
-        sk = st.session_state.dau[d]+st.session_state.duoi[du]+st.session_state.tong[t]+st.session_state.hieu[h]+((st.session_state.cham[d]*2) if d==du else (st.session_state.cham[d]+st.session_state.cham[du]))+st.session_state.bo[find_idx(i, BO_MAP)]+st.session_state.chanle[find_idx(i, CHAN_LE_MAP)]+st.session_state.beto[find_idx(i, BE_TO_MAP)]+st.session_state.giap[find_idx(i, GIAP_MAP)]+st.session_state.dang[find_idx(i, DANG_MAP)]+st.session_state.d_cl[d%2]+st.session_state.u_cl[du%2]+st.session_state.so_he[1 if i not in SO_THUONG else 0]
+        sr = sum(gs(r, c, v) for r in [rd,rk,rg] for c, v in [("dau",d),("duoi",du),("tong",(d+du)%10),("hieu",(d-du+10)%10),("cham",d),("cham",du)])
+        sk = st.session_state.dau[d]+st.session_state.duoi[du]+st.session_state.tong[(d+du)%10]+st.session_state.hieu[(d-du+10)%10]+((st.session_state.cham[d]*2) if d==du else (st.session_state.cham[d]+st.session_state.cham[du]))+st.session_state.bo[find_idx(i, BO_MAP)]+st.session_state.chanle[find_idx(i, CHAN_LE_MAP)]+st.session_state.beto[find_idx(i, BE_TO_MAP)]+st.session_state.giap[find_idx(i, GIAP_MAP)]+st.session_state.dang[find_idx(i, DANG_MAP)]+st.session_state.d_cl[d%2]+st.session_state.u_cl[du%2]+st.session_state.so_he[1 if i not in SO_THUONG else 0]
         calc.append({"s": f"{d}{du}", "d": sk + sr})
     df_f = pd.DataFrame(calc).sort_values(by=["d", "s"])
     
-    for idx, n_val in enumerate([10, 36]):
-        d_str = ", ".join(df_f.head(n_val)["s"].tolist())
-        st.markdown(f"<div class='dan-box-{idx+1}'>{d_str}</div>", unsafe_allow_html=True)
-        if st.button(f"📋 COPY DÀN {idx+1}", key=f"cp_{idx}"):
-            st.write(f'<script>navigator.clipboard.writeText("{d_str}")</script>', unsafe_allow_html=True)
-            st.toast("Đã Copy!")
+    ca, cb = st.columns(2)
+    with ca:
+        st.write("Dàn 1:")
+        c1a, c1b, c1c = st.columns([1,2,1])
+        with c1a: 
+            if st.button("➖", key="d1m"): st.session_state.num1 -= 1; st.rerun()
+        with c1b: st.session_state.num1 = st.number_input("N1", value=st.session_state.num1, label_visibility="collapsed")
+        with c1c:
+            if st.button("➕", key="d1p"): st.session_state.num1 += 1; st.rerun()
+        d1_s = ", ".join(df_f.head(st.session_state.num1)["s"].tolist())
+        st.markdown(f"<div class='dan-box-1'>{d1_s}</div>", unsafe_allow_html=True)
+        if st.button("📋 COPY D1"): st.write(f'<script>navigator.clipboard.writeText("{d1_s}")</script>', unsafe_allow_html=True); st.toast("D1")
+    with cb:
+        st.write("Dàn 2:")
+        c2a, c2b, c2c = st.columns([1,2,1])
+        with c2a:
+            if st.button("➖", key="d2m"): st.session_state.num2 -= 1; st.rerun()
+        with c2b: st.session_state.num2 = st.number_input("N2", value=st.session_state.num2, label_visibility="collapsed")
+        with c2c:
+            if st.button("➕", key="d2p"): st.session_state.num2 += 1; st.rerun()
+        d2_s = ", ".join(df_f.head(st.session_state.num2)["s"].tolist())
+        st.markdown(f"<div class='dan-box-2'>{d2_s}</div>", unsafe_allow_html=True)
+        if st.button("📋 COPY D2"): st.write(f'<script>navigator.clipboard.writeText("{d2_s}")</script>', unsafe_allow_html=True); st.toast("D2")
 
-with t2:
+with tabs[1]:
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
-    def show_row(lbl, k, cat, names):
+    def show_r(lbl, k, cat, names):
         st.write(f"**{lbl}**")
         khan = st.session_state[k]
         rt = [sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(len(khan))] if cat else [0]*len(khan)
@@ -138,51 +166,50 @@ with t2:
         st.markdown('</div>', unsafe_allow_html=True)
 
     for lbl, k, cat in [("DAU","dau","dau"),("DUOI","duoi","duoi"),("TONG","tong","tong"),("HIEU","hieu","hieu"),("CHAM","cham","cham")]:
-        show_row(lbl, k, cat, range(10))
+        show_r(lbl, k, cat, range(10))
     
-    show_row("BO", "bo", None, [x.split()[1] for x in BO_MAP.keys()])
-    show_row("CHAN LE", "chanle", None, list(CHAN_LE_MAP.keys()))
-    show_row("BE TO", "beto", None, list(BE_TO_MAP.keys()))
-    show_row("12 GIAP", "giap", None, list(GIAP_MAP.keys()))
-    show_row("DANG SO", "dang", None, list(DANG_MAP.keys()))
+    show_r("BO", "bo", None, [x.split()[1] for x in BO_MAP.keys()])
+    show_r("CHAN LE", "chanle", None, list(CHAN_LE_MAP.keys()))
+    show_r("BE TO", "beto", None, list(BE_TO_MAP.keys()))
+    show_r("12 GIAP", "giap", None, list(GIAP_MAP.keys()))
+    show_r("DANG SO", "dang", None, list(DANG_MAP.keys()))
     
-    st.write("**8 BIẾN PHỤ MỚI**")
-    st.table(pd.DataFrame({"DAU C/L":st.session_state.d_cl, "DUOI C/L":st.session_state.u_cl, "HE SO":st.session_state.so_he}, index=["0/BÉ/THG","1/LẺ/HỆ"]))
+    st.write("**8 BIẾN PHỤ MỚI 50/50**")
+    st.table(pd.DataFrame({
+        "DAU C/L": st.session_state.d_cl, "DUOI C/L": st.session_state.u_cl, "TONG C/L": st.session_state.t_cl,
+        "DAU B/T": st.session_state.d_tb, "DUOI B/T": st.session_state.u_tb, "TONG B/T": st.session_state.t_tb,
+        "HIEU B/T": st.session_state.h_tb, "HE SO": st.session_state.so_he
+    }, index=["0/BÉ/THG", "1/LẺ/HỆ"]))
 
-with t3:
+with tabs[2]:
     for n, rv in [("NGAY", rd), ("KY", rk), ("GDB", rg)]:
         if rv in ROOT_DATA:
             st.write(f"**ROOT {n}: {rv}**")
             ck = {cat: [ROOT_DATA[rv][cat].index(i) for i in range(10)] for cat in ["dau","duoi","tong","hieu","cham"]}
             st.table(pd.DataFrame(ck).T)
 
-with t4:
+with tabs[3]:
     m_data = [[next(x for x in calc if x["s"] == f"{d}{du}")["d"] for du in range(10)] for d in range(10)]
     st.table(pd.DataFrame(m_data, columns=[str(i) for i in range(10)], index=[str(i) for i in range(10)]))
 
-with t5:
-    st.write("**SỬA TAY ĐẦY ĐỦ KHAN**")
+with tabs[4]:
+    st.write("**SỬA TAY 18 BIẾN**")
     if st.button("💾 LƯU TẤT CẢ"): st.rerun()
-    # 10 Biến chính
     for k, lbl in [('dau','Dau'),('duoi','Duoi'),('tong','Tong'),('hieu','Hieu'),('cham','Cham')]:
         with st.expander(f"Sửa {lbl}"):
             cols = st.columns(5)
             for i in range(10):
-                with cols[i%5]: st.session_state[k][i] = st.number_input(f"{lbl} {i}", value=st.session_state[k][i], key=f"e_{k}_{i}")
-    # 8 Biến phụ
-    with st.expander("Sửa 8 Biến phụ 50/50"):
+                with cols[i%5]: st.session_state[k][i] = st.number_input(f"{i}", value=st.session_state[k][i], key=f"e_{k}_{i}")
+    with st.expander("Sửa 8 Biến phụ"):
         c_p1, c_p2 = st.columns(2)
         with c_p1:
-            st.session_state.d_cl = [st.number_input("Dau Chan", value=st.session_state.d_cl[0]), st.number_input("Dau Le", value=st.session_state.d_cl[1])]
-            st.session_state.t_cl = [st.number_input("Tong Chan", value=st.session_state.t_cl[0]), st.number_input("Tong Le", value=st.session_state.t_cl[1])]
-            st.session_state.d_tb = [st.number_input("Dau Be", value=st.session_state.d_tb[0]), st.number_input("Dau To", value=st.session_state.d_tb[1])]
+            st.session_state.d_cl = [st.number_input("Dau C", value=st.session_state.d_cl[0]), st.number_input("Dau L", value=st.session_state.d_cl[1])]
+            st.session_state.t_cl = [st.number_input("Tong C", value=st.session_state.t_cl[0]), st.number_input("Tong L", value=st.session_state.t_cl[1])]
         with c_p2:
-            st.session_state.u_cl = [st.number_input("Duoi Chan", value=st.session_state.u_cl[0]), st.number_input("Duoi Le", value=st.session_state.u_cl[1])]
+            st.session_state.u_cl = [st.number_input("Duoi C", value=st.session_state.u_cl[0]), st.number_input("Duoi L", value=st.session_state.u_cl[1])]
             st.session_state.so_he = [st.number_input("Thuong", value=st.session_state.so_he[0]), st.number_input("He", value=st.session_state.so_he[1])]
-            st.session_state.h_tb = [st.number_input("Hieu Be", value=st.session_state.h_tb[0]), st.number_input("Hieu To", value=st.session_state.h_tb[1])]
-    # Các biến cũ khác
     for k, lbl in [('bo','Bo'),('chanle','ChanLe'),('beto','BeTo'),('giap','Giap'),('dang','Dang')]:
         with st.expander(f"Sửa {lbl}"):
             cols = st.columns(4)
             for i in range(len(st.session_state[k])):
-                with cols[i%4]: st.session_state[k][i] = st.number_input(f"{lbl} {i}", value=st.session_state[k][i], key=f"e_v_{k}_{i}")
+                with cols[i%4]: st.session_state[k][i] = st.number_input(f"{i}", value=st.session_state[k][i], key=f"ev_{k}_{i}")
