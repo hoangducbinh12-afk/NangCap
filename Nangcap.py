@@ -2,16 +2,15 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- TỐI ƯU GIAO DIỆN PHONG CÁCH APP CŨ ---
-st.set_page_config(page_title="ROOT 18 BIEN PRO", layout="centered")
+# --- TỐI ƯU GIAO DIỆN ---
+st.set_page_config(page_title="ROOT 18 BIẾN SIÊU CẤP", layout="centered")
 
 st.markdown("""
     <style>
-    .reportview-container .main .block-container { padding-top: 1rem; }
-    .stTable td, .stTable th { font-size: 11px !important; padding: 1px !important; text-align: center !important; }
+    .stTable td, .stTable th { font-size: 10px !important; padding: 1px !important; text-align: center !important; }
     .main-title { text-align: center; color: #1E3A8A; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-    .root-label { font-size: 12px; font-weight: bold; color: #d32f2f; text-align: center; }
-    .history-container { overflow-x: auto; white-space: nowrap; }
+    .root-label { font-size: 12px; font-weight: bold; color: #d32f2f; text-align: center; background: #fdf2f2; padding: 5px; border-radius: 5px; }
+    .section-title { font-size: 13px; font-weight: bold; color: #1E3A8A; margin-top: 15px; border-left: 4px solid #1E3A8A; padding-left: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -113,17 +112,17 @@ with st.sidebar:
     st.divider()
     if st.button("RESET TẤT CẢ", type="primary"): st.session_state.clear(); st.rerun()
 
-# NHẬP LIỆU (MẶC ĐỊNH RỖNG/0)
+# NHẬP LIỆU
 c1, c2, c3 = st.columns(3)
 with c1: st.text_input("Ngày:", "", key="date_in")
 with c2: st.text_input("Kỳ:", "", key="ky_in")
 with c3: st.text_input("GĐB:", "", key="gdb_in")
 
 rd, rk, rg = get_root(st.session_state.date_in), get_root(st.session_state.ky_in), get_root(st.session_state.gdb_in)
-st.markdown(f"<p class='root-label'>Root Ngày: {rd} | Root Kỳ: {rk} | Root GĐB: {rg}</p>", unsafe_allow_html=True)
+st.markdown(f"<div class='root-label'>Root Ngày: {rd} | Root Kỳ: {rk} | Root GĐB: {rg}</div>", unsafe_allow_html=True)
 st.button("🔥 CẬP NHẬT KẾT QUẢ", on_click=cap_nhat, type="primary", use_container_width=True)
 
-t1, t2, t3, t4 = st.tabs(["⚡ Dàn", "📊 Bảng A", "🔢 Bảng B", "🕒 LS"])
+t1, t2, t3, t4, t5 = st.tabs(["⚡ Dàn", "📊 Bảng A", "🔢 Kiểm Tra Root", "🎲 Ma Trận B", "🕒 LS"])
 
 with t1:
     f_list = []
@@ -140,27 +139,44 @@ with t1:
         sr = sum(gs(r, c, v) for r in [rd,rk,rg] for c, v in [("đầu",d),("đuôi",du),("tổng",t),("hiệu",h),("chạm",d),("chạm",du)])
         f_list.append({"s": f"{d}{du}", "d": sk + sr})
     df_f = pd.DataFrame(f_list).sort_values(by=["d", "s"], ascending=[False, True])
-    st.success(", ".join(df_f.head(10)["s"].tolist()))
-    st.info(", ".join(df_f.head(36)["s"].tolist()))
+    st.success("Top 10: " + ", ".join(df_f.head(10)["s"].tolist()))
+    st.info("Dàn 36: " + ", ".join(df_f.head(36)["s"].tolist()))
 
 with t2:
-    st.write("**BẢNG A: ĐIỂM TỔNG (KHAN + 3 ROOT)**")
+    st.markdown("<div class='section-title'>BIẾN CHÍNH (KHAN / TỔNG ĐIỂM)</div>", unsafe_allow_html=True)
     for lbl, k, cat in [("ĐẦU","dau","đầu"),("ĐUÔI","duoi","đuôi"),("TỔNG","tong","tổng"),("HIỆU","hieu","hiệu"),("CHẠM","cham","chạm")]:
-        st.write(f"*{lbl}*")
-        def calc_final(idx, key, category):
-            r_points = sum(ROOT_DATA[r][category].index(idx) if r in ROOT_DATA else 0 for r in [rd,rk,rg])
-            return st.session_state[key][idx] + r_points
-        final_vals = [calc_final(i, k, cat) for i in range(10)]
-        st.table(pd.DataFrame([final_vals], columns=[str(x) for x in range(10)], index=[""]))
+        st.write(f"**{lbl}**")
+        khan = st.session_state[k]
+        tong = [khan[i] + sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(10)]
+        st.table(pd.DataFrame([khan, tong], columns=[str(x) for x in range(10)], index=["Khan", "Tổng"]))
     
-    st.write("**BIẾN 50/50**")
-    c = st.columns(4)
-    c[0].write(f"Đầu C/L: {st.session_state.d_cl}")
-    c[1].write(f"Đuôi C/L: {st.session_state.u_cl}")
-    c[2].write(f"Tổng C/L: {st.session_state.t_cl}")
-    c[3].write(f"Hệ/Th: {st.session_state.so_he}")
+    st.markdown("<div class='section-title'>8 BIẾN ĐỐI XỨNG (50/50)</div>", unsafe_allow_html=True)
+    c = st.columns(2)
+    with c[0]:
+        st.write(f"1. Đầu Chẵn/Lẻ: {st.session_state.d_cl}")
+        st.write(f"2. Đuôi Chẵn/Lẻ: {st.session_state.u_cl}")
+        st.write(f"3. Tổng Chẵn/Lẻ: {st.session_state.t_cl}")
+        st.write(f"4. Thường/Hệ: {st.session_state.so_he}")
+    with c[1]:
+        st.write(f"5. Đầu Bé/To: {st.session_state.d_tb}")
+        st.write(f"6. Đuôi Bé/To: {st.session_state.u_tb}")
+        st.write(f"7. Tổng Bé/To: {st.session_state.t_tb}")
+        st.write(f"8. Hiệu Bé/To: {st.session_state.h_tb}")
 
 with t3:
+    st.markdown("<div class='section-title'>ĐIỂM THƯỞNG CHI TIẾT THEO MÃ ROOT (KIỂM TRA)</div>", unsafe_allow_html=True)
+    for name, r_val in [("NGÀY", rd), ("KỲ", rk), ("GĐB", rg)]:
+        if r_val in ROOT_DATA:
+            st.write(f"**MÃ ROOT {name}: {r_val}**")
+            # Tạo bảng điểm thưởng cho các số 0-9
+            check_data = {}
+            for cat in ["đầu", "đuôi", "tổng", "hiệu", "chạm"]:
+                check_data[cat] = [ROOT_DATA[r_val][cat].index(i) for i in range(10)]
+            st.table(pd.DataFrame(check_data, index=[str(x) for x in range(10)]).T)
+        else:
+            st.warning(f"Chưa có dữ liệu cho Mã Root {name}")
+
+with t4:
     m_data = []
     for d in range(10):
         row = []
@@ -178,6 +194,5 @@ with t3:
         m_data.append(row)
     st.table(pd.DataFrame(m_data, columns=[str(i) for i in range(10)], index=[str(i) for i in range(10)]))
 
-with t4:
-    if st.session_state.ls:
-        st.table(pd.DataFrame(st.session_state.ls))
+with t5:
+    if st.session_state.ls: st.table(pd.DataFrame(st.session_state.ls))
