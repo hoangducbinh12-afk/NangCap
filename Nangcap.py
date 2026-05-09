@@ -2,21 +2,33 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- CAU HINH GIAO DIEN CHUAN APP CU ---
-st.set_page_config(page_title="ROOT 18 BIEN PRO", layout="centered")
+# --- CẤU HÌNH GIAO DIỆN TỐI ƯU ---
+st.set_page_config(page_title="HỆ THỐNG ROOT 18 BIẾN PRO", layout="centered")
 
 st.markdown("""
     <style>
-    .stButton>button { width: 100%; border-radius: 5px; height: 35px; font-size: 14px; }
-    .main-title { text-align: center; font-size: 20px; font-weight: bold; color: #333; margin-bottom: 15px; }
-    .dan-box-1 { background-color: #e8f5e9; padding: 10px; border-radius: 5px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: 'Courier New', Courier, monospace; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-    .dan-box-2 { background-color: #e3f2fd; padding: 10px; border-radius: 5px; border: 1px solid #bbdefb; color: #1565c0; font-family: 'Courier New', Courier, monospace; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-    .root-display { text-align: center; background: #fafafa; padding: 5px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; font-weight: bold; color: #d32f2f; font-size: 13px; }
-    .stTable td, .stTable th { font-size: 11px !important; padding: 1px !important; text-align: center !important; }
+    /* Tổng thể */
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; max-width: 700px !important; }
+    .main-title { text-align: center; font-size: 22px; font-weight: bold; color: #333; margin-bottom: 10px; }
+    
+    /* Font chữ bảng A và B (Không dấu) */
+    .stTable td, .stTable th { font-size: 11px !important; padding: 1px !important; text-align: center !important; font-family: sans-serif !important; }
+    
+    /* Box Dàn số */
+    .dan-box-1 { background-color: #e8f5e9; padding: 8px; border-radius: 4px; border: 1px solid #c8e6c9; color: #2e7d32; font-family: monospace; font-size: 13px; margin-bottom: 5px; }
+    .dan-box-2 { background-color: #e3f2fd; padding: 8px; border-radius: 4px; border: 1px solid #bbdefb; color: #1565c0; font-family: monospace; font-size: 13px; margin-bottom: 5px; }
+    
+    /* Root Display */
+    .root-display { text-align: center; background: #fff5f5; padding: 5px; border-radius: 5px; border: 1px solid #ffe3e3; margin-bottom: 10px; font-weight: bold; color: #d32f2f; font-size: 12px; }
+    
+    /* Nút bấm gọn */
+    .stButton>button { height: 32px !important; padding: 0px 10px !important; font-size: 13px !important; }
+    div[data-baseweb="tab-list"] { gap: 10px !important; }
+    div[data-baseweb="tab"] { padding: 5px 10px !important; font-size: 13px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DU LIEU ROOT (KHONG DAU DE TRANH LOI FONT) ---
+# --- DỮ LIỆU ROOT (CẤU TRÚC KHÔNG DẤU BÊN TRONG) ---
 ROOT_DATA = {
     1: {"cham": [1,6,0,5,2,7,3,8,4,9], "dau": [1,6,0,5,4,9,2,7,3,8], "duoi": [1,6,2,7,0,5,4,9,3,8], "tong": [1,6,2,7,4,9,0,5,3,8], "hieu": [0,5,1,6,2,7,4,9,3,8]},
     2: {"cham": [2,7,1,6,3,8,4,9,0,5], "dau": [2,7,1,6,5,0,3,8,4,9], "duoi": [2,7,3,8,1,6,5,0,4,9], "tong": [2,7,3,8,5,0,1,6,4,9], "hieu": [0,5,2,7,1,6,3,8,4,9]},
@@ -46,7 +58,7 @@ def find_idx(n, mapping):
         if n in nums: return i
     return 0
 
-# --- KHOI TAO STATE (MAC DINH 0) ---
+# --- KHỞI TẠO ---
 if 'dau' not in st.session_state:
     for k in ['dau','duoi','tong','hieu','cham']: st.session_state[k] = [0]*10
     st.session_state.bo = [0]*15
@@ -81,7 +93,6 @@ def cap_nhat():
     df = pd.DataFrame(tmp).sort_values(by=["d","s"], ascending=[True, True]).reset_index(drop=True)
     st.session_state.ls.insert(0, {"SO": f"{n:02d}", "HANG": df[df['s']==f"{n:02d}"].index[0]+1, "DIEM": df[df['s']==f"{n:02d}"].iloc[0]['d']})
     
-    # Cap nhat Khan
     for i in range(10):
         st.session_state.dau[i] = 0 if i==dv else st.session_state.dau[i]+1
         st.session_state.duoi[i] = 0 if i==duv else st.session_state.duoi[i]+1
@@ -101,38 +112,36 @@ def cap_nhat():
 # --- SIDEBAR ---
 with st.sidebar:
     st.markdown("### ☁️ CLOUD STORAGE")
-    if st.button("💾 SAO LUU DU LIEU"):
+    if st.button("💾 SAO LƯU DỮ LIỆU"):
         st.session_state.db[datetime.now().strftime("%H:%M:%S")] = {k: list(st.session_state[k]) if isinstance(st.session_state[k], list) else st.session_state[k] for k in st.session_state.keys() if k not in ['db']}
-        st.toast("Da luu!")
+        st.toast("Đã lưu!")
     if st.session_state.db:
-        sel = st.selectbox("Ban luu:", list(st.session_state.db.keys())[::-1])
-        if st.button("🔄 PHUC HOI"):
+        sel = st.selectbox("Bản lưu:", list(st.session_state.db.keys())[::-1])
+        if st.button("🔄 PHỤC HỒI"):
             for k, v in st.session_state.db[sel].items(): st.session_state[k] = v
             st.rerun()
     st.divider()
-    if st.button("🗑️ XOA SACH DU LIEU"):
-        st.session_state.clear()
-        st.rerun()
+    if st.button("🗑️ XÓA SẠCH DỮ LIỆU"): st.session_state.clear(); st.rerun()
 
 # --- MAIN UI ---
-st.markdown("<div class='main-title'>💎 HE THONG THONG KE 18 BIEN PRO</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>💎 HỆ THỐNG THỐNG KÊ 18 BIẾN PRO</div>", unsafe_allow_html=True)
 
-st.write("So vua no:")
+st.write("Số vừa nổ:")
 cg1, cg2, cg3 = st.columns([1, 4, 1])
 with cg1: 
     if st.button("➖", key="sg"): 
         try: st.session_state.gdb_in = str(int(st.session_state.gdb_in)-1).zfill(6)
         except: pass
-with cg2: st.text_input("GDB", value="000000", key="gdb_in", label_visibility="collapsed")
+with cg2: st.text_input("GĐB", value="000000", key="gdb_in", label_visibility="collapsed")
 with cg3: 
     if st.button("➕", key="ag"): 
         try: st.session_state.gdb_in = str(int(st.session_state.gdb_in)+1).zfill(6)
         except: pass
 
 ci1, ci2 = st.columns(2)
-with ci1: st.text_input("Ngay (09092009):", value="", key="date_in")
+with ci1: st.text_input("Ngày (09092009):", value="", key="date_in")
 with ci2:
-    st.write("Ky quay:")
+    st.write("Kỳ quay:")
     ck1, ck2, ck3 = st.columns([1, 2, 1])
     with ck1: 
         if st.button("➖", key="sk"): st.session_state.ky_in -= 1
@@ -140,15 +149,15 @@ with ci2:
     with ck3: 
         if st.button("➕", key="ak"): st.session_state.ky_in += 1
 
-st.markdown(f"<div class='root-display'>ROOT NGAY: {st.session_state.rd} | ROOT KY: {st.session_state.rk} | ROOT GDB: {st.session_state.rg}</div>", unsafe_allow_html=True)
-st.button("🚀 CAP NHAT", on_click=cap_nhat, type="primary", use_container_width=True)
+st.markdown(f"<div class='root-display'>ROOT NGÀY: {st.session_state.rd} | ROOT KỲ: {st.session_state.rk} | ROOT GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
+st.button("🚀 CẬP NHẬT", on_click=cap_nhat, type="primary", use_container_width=True)
 
-t1, t2, t3, t4, t5 = st.tabs(["⚡ Loc Dan", "📊 Bang A", "🎲 Ma Tran B", "🛠️ Sua Tay", "🕒 Lich Su"])
+tabs = st.tabs(["⚡ Lọc Dàn", "📊 Bảng A", "🎲 Ma Trận B", "🛠️ Sửa Tay", "🕒 Lịch Sử"])
 
-with t1:
+with tabs[0]:
     cn1, cn2 = st.columns(2)
     with cn1:
-        st.write("Dan 1:")
+        st.write("Dàn 1:")
         dn1, dn2, dn3 = st.columns([1, 2, 1])
         with dn1: 
             if st.button("➖", key="s1"): st.session_state.num_1 -= 1
@@ -156,7 +165,7 @@ with t1:
         with dn3: 
             if st.button("➕", key="a1"): st.session_state.num_1 += 1
     with cn2:
-        st.write("Dan 2:")
+        st.write("Dàn 2:")
         dn4, dn5, dn6 = st.columns([1, 2, 1])
         with dn4: 
             if st.button("➖", key="s2"): st.session_state.num_2 -= 1
@@ -164,7 +173,6 @@ with t1:
         with dn6: 
             if st.button("➕", key="a2"): st.session_state.num_2 += 1
 
-    # Tinh toan dan (THAP -> CAO)
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
     f_list = []
     for i in range(100):
@@ -184,23 +192,19 @@ with t1:
     d2_str = ", ".join(df_f.head(st.session_state.num_2)["s"].tolist())
 
     st.markdown(f"<div class='dan-box-1'>{d1_str}</div>", unsafe_allow_html=True)
-    st.button("📋 COPY DAN 1", on_click=lambda: st.toast("Da copy!"), key="cp1")
+    st.button("📋 COPY DÀN 1", key="cp1")
     st.markdown(f"<div class='dan-box-2'>{d2_str}</div>", unsafe_allow_html=True)
-    st.button("📋 COPY DAN 2", on_click=lambda: st.toast("Da copy!"), key="cp2")
+    st.button("📋 COPY DÀN 2", key="cp2")
 
-with t2:
-    st.write("**BANG A (KHAN + ROOT)**")
+with tabs[1]:
+    st.write("**BẢNG A (KHÔNG DẤU BÊN TRONG)**")
     for lbl, k, cat in [("DAU","dau","dau"),("DUOI","duoi","duoi"),("TONG","tong","tong"),("HIEU","hieu","hieu"),("CHAM","cham","cham")]:
         vals = [st.session_state[k][i] + sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) for i in range(10)]
         st.write(f"*{lbl}*")
         st.table(pd.DataFrame([vals], columns=[str(x) for x in range(10)], index=[""]))
-    
-    st.write("**8 BIEN 50/50**")
-    st.write(f"DAU C/L: {st.session_state.d_cl} | DUOI C/L: {st.session_state.u_cl} | TONG C/L: {st.session_state.t_cl} | HE: {st.session_state.so_he}")
-    st.write(f"DAU B/T: {st.session_state.d_tb} | DUOI B/T: {st.session_state.u_tb} | TONG B/T: {st.session_state.t_tb} | HIEU B/T: {st.session_state.h_tb}")
 
-with t3:
-    st.write("**MA TRAN B (DIEM TONG HOP)**")
+with tabs[2]:
+    st.write("**MA TRAN B (KHÔNG DẤU BÊN TRONG)**")
     m_data = []
     for d in range(10):
         row = []
@@ -218,28 +222,30 @@ with t3:
         m_data.append(row)
     st.table(pd.DataFrame(m_data, columns=[str(i) for i in range(10)], index=[str(i) for i in range(10)]))
 
-with t4:
-    st.write("**SUA TAY DIEM KHAN**")
+with tabs[3]:
+    st.write("**SỬA TAY ĐIỂM KHAN**")
     c1, c2 = st.columns(2)
     with c1:
-        for i in range(10): st.session_state.dau[i] = st.number_input(f"DAU {i}", value=st.session_state.dau[i])
-        for i in range(10): st.session_state.cham[i] = st.number_input(f"CHAM {i}", value=st.session_state.cham[i])
+        for i in range(10): st.session_state.dau[i] = st.number_input(f"Đầu {i}", value=st.session_state.dau[i])
+        for i in range(10): st.session_state.cham[i] = st.number_input(f"Chạm {i}", value=st.session_state.cham[i])
     with c2:
-        for i in range(10): st.session_state.duoi[i] = st.number_input(f"DUOI {i}", value=st.session_state.duoi[i])
-        for i in range(15): st.session_state.bo[i] = st.number_input(f"BO {list(BO_MAP.keys())[i]}", value=st.session_state.bo[i])
+        for i in range(10): st.session_state.duoi[i] = st.number_input(f"Đuôi {i}", value=st.session_state.duoi[i])
+        for i in range(15): st.session_state.bo[i] = st.number_input(f"Bộ {list(BO_MAP.keys())[i]}", value=st.session_state.bo[i])
     
-    st.write("**SUA TAY 8 BIEN 50/50**")
+    st.write("**SỬA TAY 8 BIẾN 50/50**")
     cb1, cb2 = st.columns(2)
     with cb1:
-        st.session_state.d_cl = [st.number_input("DAU CHAN", value=st.session_state.d_cl[0]), st.number_input("DAU LE", value=st.session_state.d_cl[1])]
-        st.session_state.u_cl = [st.number_input("DUOI CHAN", value=st.session_state.u_cl[0]), st.number_input("DUOI LE", value=st.session_state.u_cl[1])]
-        st.session_state.t_cl = [st.number_input("TONG CHAN", value=st.session_state.t_cl[0]), st.number_input("TONG LE", value=st.session_state.t_cl[1])]
-        st.session_state.so_he = [st.number_input("THUONG", value=st.session_state.so_he[0]), st.number_input("HE", value=st.session_state.so_he[1])]
+        st.session_state.d_cl = [st.number_input("Đầu Chẵn", value=st.session_state.d_cl[0]), st.number_input("Đầu Lẻ", value=st.session_state.d_cl[1])]
+        st.session_state.u_cl = [st.number_input("Đuôi Chẵn", value=st.session_state.u_cl[0]), st.number_input("Đuôi Lẻ", value=st.session_state.u_cl[1])]
+        st.session_state.t_cl = [st.number_input("Tổng Chẵn", value=st.session_state.t_cl[0]), st.number_input("Tổng Lẻ", value=st.session_state.t_cl[1])]
+        st.session_state.so_he = [st.number_input("Thường", value=st.session_state.so_he[0]), st.number_input("Hệ", value=st.session_state.so_he[1])]
     with cb2:
-        st.session_state.d_tb = [st.number_input("DAU BE", value=st.session_state.d_tb[0]), st.number_input("DAU TO", value=st.session_state.d_tb[1])]
-        st.session_state.u_tb = [st.number_input("DUOI BE", value=st.session_state.u_tb[0]), st.number_input("DUOI TO", value=st.session_state.u_tb[1])]
-        st.session_state.t_tb = [st.number_input("TONG BE", value=st.session_state.t_tb[0]), st.number_input("TONG TO", value=st.session_state.t_tb[1])]
-        st.session_state.h_tb = [st.number_input("HIEU BE", value=st.session_state.h_tb[0]), st.number_input("HIEU TO", value=st.session_state.h_tb[1])]
+        st.session_state.d_tb = [st.number_input("Đầu Bé", value=st.session_state.d_tb[0]), st.number_input("Đầu To", value=st.session_state.d_tb[1])]
+        st.session_state.u_tb = [st.number_input("Đuôi Bé", value=st.session_state.u_tb[0]), st.number_input("Đuôi To", value=st.session_state.u_tb[1])]
+        st.session_state.t_tb = [st.number_input("Tổng Bé", value=st.session_state.t_tb[0]), st.number_input("Tổng To", value=st.session_state.t_tb[1])]
+        st.session_state.h_tb = [st.number_input("Hiệu Bé", value=st.session_state.h_tb[0]), st.number_input("Hiệu To", value=st.session_state.h_tb[1])]
 
-with t5:
-    if st.session_state.ls: st.table(pd.DataFrame(st.session_state.ls))
+with tabs[4]:
+    if st.session_state.ls:
+        st.write("**LỊCH SỬ KẾT QUẢ**")
+        st.table(pd.DataFrame(st.session_state.ls))
