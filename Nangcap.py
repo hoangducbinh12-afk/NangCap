@@ -10,13 +10,13 @@ st.markdown("""
     .stTable td, .stTable th { font-size: 10px !important; padding: 1px !important; text-align: center !important; }
     .main-title { text-align: center; color: #d32f2f; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
     .root-res { color: #1E3A8A; font-weight: bold; font-size: 13px; background: #e3f2fd; padding: 3px; border-radius: 5px; text-align: center; margin-bottom: 5px; }
-    .card { background: #fdfdfd; border: 1px solid #ddd; padding: 8px; border-radius: 8px; margin-bottom: 8px; }
+    .card { background: #fdfdfd; border: 1px solid #ddd; padding: 5px; border-radius: 5px; margin-bottom: 5px; text-align: center; }
     .history-container { overflow-x: auto; white-space: nowrap; border: 1px solid #eee; padding: 5px; background: #fff; }
-    .compact-text { font-size: 12px !important; font-weight: bold; color: #333; }
+    .compact-text { font-size: 12px !important; font-weight: bold; color: #333; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DỮ LIỆU GỐC (ROOT_DATA giữ nguyên như ảnh) ---
+# --- DỮ LIỆU GỐC ---
 BO_MAP = {
     "Bộ 00": [0, 5, 50, 55], "Bộ 01": [1, 10, 6, 60, 51, 15, 56, 65], "Bộ 02": [2, 20, 7, 70, 52, 25, 57, 75],
     "Bộ 03": [3, 30, 8, 80, 53, 35, 58, 85], "Bộ 04": [4, 40, 9, 90, 54, 45, 59, 95], "Bộ 11": [11, 16, 61, 66],
@@ -53,16 +53,23 @@ ROOT_DATA = {
     9: {"chạm": [9,4,8,3,6,1,5,0,2,7], "đầu": [9,4,8,3,2,7,0,5,1,6], "đuôi": [9,4,0,5,8,3,2,7,1,6], "tổng": [9,4,2,7,6,1,8,3,5,0], "hiệu": [0,5,4,9,3,8,2,7,1,6]}
 }
 
+# --- HÀM BỔ TRỢ (FIX LỖI SYNTAX) ---
 def get_root(s):
-    nums = [int(x) for x in str(s) if x.isdigit()]
-    if not nums: return 1
-    t = sum(nums); [t := sum(int(x) for x in str(t)) while t > 9]; return t if t > 0 else 1
+    try:
+        nums = [int(x) for x in str(s) if x.isdigit()]
+        if not nums: return 1
+        t = sum(nums)
+        while t > 9:
+            t = sum(int(x) for x in str(t))
+        return t if t > 0 else 1
+    except: return 1
 
 def find_idx(n, mapping):
     for i, (name, nums) in enumerate(mapping.items()):
         if n in nums: return i
     return 0
 
+# --- KHỞI TẠO STATE ---
 if 'dau' not in st.session_state:
     for k in ['dau','duoi','tong','hieu','cham']: st.session_state[k] = [0]*10
     st.session_state['bo'], st.session_state['giap'], st.session_state['dang'] = [0]*15, [0]*12, [0]*5
@@ -112,22 +119,23 @@ def cap_nhat():
     st.session_state.h_tb[1 if hv>=5 else 0]=0; st.session_state.h_tb[0 if hv>=5 else 1]+=1
     st.session_state.so_he[1 if n not in SO_THUONG else 0]=0; st.session_state.so_he[0 if n not in SO_THUONG else 1]+=1
 
+# --- GIAO DIỆN CHÍNH ---
 st.markdown("<div class='main-title'>💎 HỆ THỐNG ROOT 18 BIẾN SIÊU CẤP</div>", unsafe_allow_html=True)
 
 with st.container():
     c1, c2, c3 = st.columns(3)
     with c1: 
         st.text_input("Ngày:", "10052026", key="date_in")
-        st.markdown(f"<div class='root-res'>Root: {get_root(st.session_state.date_in)}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='root-res'>Root Ngày: {get_root(st.session_state.date_in)}</div>", unsafe_allow_html=True)
     with c2: 
-        st.text_input("Kỳ:", "1", key="ky_in")
-        st.markdown(f"<div class='root-res'>Root: {get_root(st.session_state.ky_in)}</div>", unsafe_allow_html=True)
+        st.text_input("Kỳ quay:", "1", key="ky_in")
+        st.markdown(f"<div class='root-res'>Root Kỳ: {get_root(st.session_state.ky_in)}</div>", unsafe_allow_html=True)
     with c3: 
         st.text_input("GĐB:", "000000", key="gdb_in")
-        st.markdown(f"<div class='root-res'>Root: {get_root(st.session_state.gdb_in)}</div>", unsafe_allow_html=True)
-    st.button("🔥 CẬP NHẬT & TÍNH TOÁN", on_click=cap_nhat, type="primary", use_container_width=True)
+        st.markdown(f"<div class='root-res'>Root GĐB: {get_root(st.session_state.gdb_in)}</div>", unsafe_allow_html=True)
+    st.button("🚀 CẬP NHẬT TỔNG LỰC", on_click=cap_nhat, type="primary", use_container_width=True)
 
-t1, t2, t3, t4 = st.tabs(["⚡ Dàn", "📊 Bảng A", "🔢 Ma Trận B", "🕒 Lịch Sử"])
+t1, t2, t3, t4 = st.tabs(["⚡ Lấy Dàn", "📊 Bảng A", "🔢 Ma Trận B", "🕒 Lịch Sử"])
 
 with t1:
     r_d, r_k, r_g = get_root(st.session_state.date_in), get_root(st.session_state.ky_in), get_root(st.session_state.gdb_in)
@@ -149,18 +157,14 @@ with t1:
     st.info(", ".join(df_f.head(36)["s"].tolist()))
 
 with t2:
-    st.markdown("<p class='compact-text'>BẢNG A: KHAN + ĐIỂM THƯỞNG ROOT</p>", unsafe_allow_html=True)
+    st.markdown("<p class='compact-text'>BẢNG A: KHAN + ĐIỂM ROOT (0-9đ)</p>", unsafe_allow_html=True)
     r_d, r_k, r_g = get_root(st.session_state.date_in), get_root(st.session_state.ky_in), get_root(st.session_state.gdb_in)
     
     for lbl, k, cat in [("ĐẦU", "dau", "đầu"), ("ĐUÔI", "duoi", "đuôi"), ("TỔNG", "tong", "tổng"), ("HIỆU", "hieu", "hiệu"), ("CHẠM", "cham", "chạm")]:
         st.write(f"**{lbl}**")
-        vals = []
-        for i in range(10):
-            # Tính điểm thưởng Root cho từng vị trí 0-9
-            tr_root = ROOT_DATA[r_d][cat].index(i) + ROOT_DATA[r_k][cat].index(i) + ROOT_DATA[r_g][cat].index(i)
-            vals.append(st.session_state[k][i] + tr_root)
+        final_scores = [st.session_state[k][i] + ROOT_DATA[r_d][cat].index(i) + ROOT_DATA[r_k][cat].index(i) + ROOT_DATA[r_g][cat].index(i) for i in range(10)]
         st.markdown('<div class="history-container">', unsafe_allow_html=True)
-        st.table(pd.DataFrame([vals], columns=[str(x) for x in range(10)], index=["Tổng"]))
+        st.table(pd.DataFrame([final_scores], columns=[str(x) for x in range(10)], index=["Tổng"]))
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<p class='compact-text'>BIẾN ĐỐI XỨNG (50/50)</p>", unsafe_allow_html=True)
@@ -168,7 +172,7 @@ with t2:
     with c1: st.markdown(f"<div class='card'><b>Đầu C/L</b><br>{st.session_state.d_cl}</div>", unsafe_allow_html=True)
     with c2: st.markdown(f"<div class='card'><b>Đuôi C/L</b><br>{st.session_state.u_cl}</div>", unsafe_allow_html=True)
     with c3: st.markdown(f"<div class='card'><b>Tổng C/L</b><br>{st.session_state.t_cl}</div>", unsafe_allow_html=True)
-    with c4: st.markdown(f"<div class='card'><b>Hệ/Thường</b><br>{st.session_state.so_he}</div>", unsafe_allow_html=True)
+    with c4: st.markdown(f"<div class='card'><b>Thường/Hệ</b><br>{st.session_state.so_he}</div>", unsafe_allow_html=True)
     c5, c6, c7, c8 = st.columns(4)
     with c5: st.markdown(f"<div class='card'><b>Đầu B/T</b><br>{st.session_state.d_tb}</div>", unsafe_allow_html=True)
     with c6: st.markdown(f"<div class='card'><b>Đuôi B/T</b><br>{st.session_state.u_tb}</div>", unsafe_allow_html=True)
