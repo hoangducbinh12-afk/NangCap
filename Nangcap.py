@@ -2,20 +2,21 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- TỐI ƯU GIAO DIỆN ---
+# --- CẤU HÌNH GIAO DIỆN CHUẨN ---
 st.set_page_config(page_title="ROOT 18 BIẾN SIÊU CẤP", layout="centered")
 
 st.markdown("""
     <style>
-    .stTable td, .stTable th { font-size: 10px !important; padding: 1px !important; text-align: center !important; }
+    .stTable td, .stTable th { font-size: 11px !important; padding: 1px !important; text-align: center !important; }
     .main-title { text-align: center; color: #1E3A8A; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
     .root-label { font-size: 12px; font-weight: bold; color: #d32f2f; text-align: center; background: #fdf2f2; padding: 5px; border-radius: 5px; margin-bottom: 10px; }
-    .section-title { font-size: 13px; font-weight: bold; color: #1E3A8A; margin-top: 10px; border-left: 4px solid #1E3A8A; padding-left: 5px; }
-    .dan-box { background: #f0f7ff; padding: 8px; border-radius: 5px; border: 1px solid #cce3ff; margin-top: 5px; font-size: 12px; }
+    .dan-container { background-color: #f0f7ff; padding: 10px; border-radius: 8px; border: 1px solid #cce3ff; margin-top: 5px; }
+    .dan-text { font-family: monospace; font-size: 14px; font-weight: bold; color: #004085; word-wrap: break-word; }
+    .label-dan { font-size: 13px; font-weight: bold; color: #d32f2f; margin-bottom: 3px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DỮ LIỆU ROOT ---
+# --- DỮ LIỆU ROOT (Trai -> Phải: 0 -> 9đ) ---
 ROOT_DATA = {
     1: {"chạm": [1,6,0,5,2,7,3,8,4,9], "đầu": [1,6,0,5,4,9,2,7,3,8], "đuôi": [1,6,2,7,0,5,4,9,3,8], "tổng": [1,6,2,7,4,9,0,5,3,8], "hiệu": [0,5,1,6,2,7,4,9,3,8]},
     2: {"chạm": [2,7,1,6,3,8,4,9,0,5], "đầu": [2,7,1,6,5,0,3,8,4,9], "đuôi": [2,7,3,8,1,6,5,0,4,9], "tổng": [2,7,3,8,5,0,1,6,4,9], "hiệu": [0,5,2,7,1,6,3,8,4,9]},
@@ -55,7 +56,6 @@ if 'dau' not in st.session_state:
     st.session_state.ky_quay = 1
     st.session_state.rd, st.session_state.rk, st.session_state.rg = 0, 0, 0
 
-# --- XỬ LÝ CẬP NHẬT ---
 def cap_nhat():
     raw = st.session_state.gdb_in
     if len(raw) < 2: return
@@ -81,9 +81,11 @@ def cap_nhat():
         sr = sum(gs(r, c, v) for r in [rd,rk,rg] for c, v in [("đầu",d),("đuôi",du),("tổng",t),("hiệu",h),("chạm",d),("chạm",du)])
         tmp.append({"s": f"{d}{du}", "d": sk + sr})
     
+    # --- QUY LUẬT: HẠNG THẤP LÊN CAO ---
     df = pd.DataFrame(tmp).sort_values(by=["d","s"], ascending=[True, True]).reset_index(drop=True)
     st.session_state.ls.insert(0, {"Số": f"{n:02d}", "Hạng": df[df['s']==f"{n:02d}"].index[0]+1, "Điểm": df[df['s']==f"{n:02d}"].iloc[0]['d']})
     
+    # Cập nhật điểm Khan
     for i in range(10):
         st.session_state.dau[i] = 0 if i==dv else st.session_state.dau[i]+1
         st.session_state.duoi[i] = 0 if i==duv else st.session_state.duoi[i]+1
@@ -91,6 +93,7 @@ def cap_nhat():
         st.session_state.hieu[i] = 0 if i==hv else st.session_state.hieu[i]+1
         st.session_state.cham[i] = 0 if (i==dv or i==duv) else st.session_state.cham[i]+1
     for i in range(15): st.session_state.bo[i] = 0 if i==find_idx(n, BO_MAP) else st.session_state.bo[i]+1
+    # 50/50
     st.session_state.d_cl[dv%2]=0; st.session_state.d_cl[(dv+1)%2]+=1
     st.session_state.u_cl[duv%2]=0; st.session_state.u_cl[(duv+1)%2]+=1
     st.session_state.t_cl[tv%2]=0; st.session_state.t_cl[(tv+1)%2]+=1
@@ -104,51 +107,46 @@ def cap_nhat():
 st.markdown("<div class='main-title'>💎 SIÊU HỆ THỐNG ROOT 18 BIẾN</div>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.header("💾 QUẢN LÝ")
+    st.header("💾 SAO LƯU & QUẢN LÝ")
     if st.button("LƯU BẢN SAO LƯU", use_container_width=True):
         st.session_state.db[datetime.now().strftime("%H:%M:%S")] = {k: list(st.session_state[k]) if isinstance(st.session_state[k], list) else st.session_state[k] for k in st.session_state.keys() if k not in ['db']}
         st.toast("Đã lưu thành công!")
     if st.session_state.db:
-        st.divider()
-        sel = st.selectbox("Chọn bản sao lưu:", list(st.session_state.db.keys())[::-1])
-        c_l, c_r = st.columns(2)
-        with c_l:
-            if st.button("HỒI PHỤC", use_container_width=True):
+        sel = st.selectbox("Bản sao lưu:", list(st.session_state.db.keys())[::-1])
+        cl, cr = st.columns(2)
+        with cl:
+            if st.button("HỒI PHỤC"):
                 for k, v in st.session_state.db[sel].items(): st.session_state[k] = v
                 st.rerun()
-        with c_r:
-            if st.button("XÓA BẢN NÀY", use_container_width=True):
-                del st.session_state.db[sel]; st.rerun()
+        with cr:
+            if st.button("XÓA"): del st.session_state.db[sel]; st.rerun()
     st.divider()
     if st.button("RESET TẤT CẢ", type="primary", use_container_width=True):
         st.session_state.clear(); st.rerun()
 
 # NHẬP LIỆU
 c1, c2, c3 = st.columns([2, 2, 2])
-with c1: st.text_input("Ngày (09092009):", "", key="date_in")
+with c1: st.text_input("Ngày:", "", key="date_in")
 with c2: 
     st.write("Kỳ quay:")
     ck1, ck2, ck3 = st.columns([1, 2, 1])
     with ck1: 
         if st.button("➖"): st.session_state.ky_quay -= 1; st.rerun()
-    with ck2: st.session_state.ky_quay = st.number_input("Kỳ", value=st.session_state.ky_quay, label_visibility="collapsed")
+    with ck2: st.session_state.ky_quay = st.number_input("K", value=st.session_state.ky_quay, label_visibility="collapsed")
     with ck3: 
         if st.button("➕"): st.session_state.ky_quay += 1; st.rerun()
-with c3: st.text_input("GĐB (6 số):", "", key="gdb_in")
+with c3: st.text_input("GĐB:", "", key="gdb_in")
 
-st.markdown(f"<div class='root-label'>Root Ngày: {st.session_state.rd} | Root Kỳ: {st.session_state.rk} | Root GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='root-label'>Mã Root Ngày: {st.session_state.rd} | Root Kỳ: {st.session_state.rk} | Root GĐB: {st.session_state.rg}</div>", unsafe_allow_html=True)
 st.button("🔥 CẬP NHẬT TỔNG LỰC", on_click=cap_nhat, type="primary", use_container_width=True)
 
 t1, t2, t3, t4, t5 = st.tabs(["⚡ Dàn", "📊 Bảng A", "🔢 Kiểm Tra Root", "🎲 Ma Trận B", "🕒 LS"])
 
 with t1:
     c_n1, c_n2 = st.columns(2)
-    with c_n1: 
-        num_1 = st.number_input("Số quân Dàn 1:", 1, 100, 10)
-    with c_n2: 
-        num_2 = st.number_input("Số quân Dàn 2:", 1, 100, 36)
+    with c_n1: num_1 = st.number_input("Quân Dàn 1:", 1, 100, 10)
+    with c_n2: num_2 = st.number_input("Quân Dàn 2:", 1, 100, 36)
     
-    # Tính điểm để lấy dàn (luôn tính dựa trên state hiện tại)
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
     f_list = []
     for i in range(100):
@@ -165,31 +163,41 @@ with t1:
     
     df_f = pd.DataFrame(f_list).sort_values(by=["d", "s"], ascending=[True, True])
     
-    st.markdown(f"<div class='dan-box'><b>Dàn {num_1} (Thấp -> Cao):</b><br>{', '.join(df_f.head(num_1)['s'].tolist())}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='dan-box'><b>Dàn {num_2} (Thấp -> Cao):</b><br>{', '.join(df_f.head(num_2)['s'].tolist())}</div>", unsafe_allow_html=True)
+    st.markdown("<div class='label-dan'>Dàn 1 (Thấp nhất)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='dan-container'><span class='dan-text'>{', '.join(df_f.head(num_1)['s'].tolist())}</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='label-dan' style='margin-top:10px;'>Dàn 2 (Thấp nhất)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='dan-container'><span class='dan-text'>{', '.join(df_f.head(num_2)['s'].tolist())}</span></div>", unsafe_allow_html=True)
 
 with t2:
-    st.markdown("<div class='section-title'>NHẬP TAY / CHỈNH SỬA BẢNG A (KHAN)</div>", unsafe_allow_html=True)
-    # Cho phép sửa tay từng biến
-    col_a1, col_a2 = st.columns(2)
-    with col_a1:
-        st.session_state.dau = [st.number_input(f"Đầu {i}", value=v, step=1, key=f"in_d_{i}") for i, v in enumerate(st.session_state.dau)]
-        st.session_state.tong = [st.number_input(f"Tổng {i}", value=v, step=1, key=f"in_t_{i}") for i, v in enumerate(st.session_state.tong)]
-    with col_a2:
-        st.session_state.duoi = [st.number_input(f"Đuôi {i}", value=v, step=1, key=f"in_u_{i}") for i, v in enumerate(st.session_state.duoi)]
-        st.session_state.hieu = [st.number_input(f"Hiệu {i}", value=v, step=1, key=f"in_h_{i}") for i, v in enumerate(st.session_state.hieu)]
-    
-    st.write("**Biến Bộ & Chạm**")
-    st.session_state.bo = [st.number_input(f"Bộ {list(BO_MAP.keys())[i]}", value=v, step=1) for i, v in enumerate(st.session_state.bo)]
-    st.session_state.cham = [st.number_input(f"Chạm {i}", value=v, step=1) for i, v in enumerate(st.session_state.cham)]
+    st.write("**BẢNG A: ĐIỂM TỔNG (KHAN + 3 ROOT)**")
+    rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
+    for lbl, k, cat in [("ĐẦU","dau","đầu"),("ĐUÔI","duoi","đuôi"),("TỔNG","tong","tổng"),("HIỆU","hieu","hiệu"),("CHẠM","cham","chạm")]:
+        st.write(f"*{lbl}*")
+        def calc_f(idx, key, category):
+            rp = sum(ROOT_DATA[r][category].index(idx) if r in ROOT_DATA else 0 for r in [rd,rk,rg])
+            return st.session_state[key][idx] + rp
+        vals = [calc_f(i, k, cat) for i in range(10)]
+        # Hiển thị bảng và cho phép sửa nhanh bên dưới nếu cần
+        st.table(pd.DataFrame([vals], columns=[str(x) for x in range(10)], index=[""]))
+        with st.expander(f"Sửa tay điểm Khan {lbl}"):
+            for i in range(10): st.session_state[k][i] = st.number_input(f"{lbl} {i}", value=st.session_state[k][i], key=f"edit_{k}_{i}")
+
+    st.write("**BIẾN 50/50**")
+    c50 = st.columns(2)
+    with c50[0]:
+        st.write(f"Đầu C/L: {st.session_state.d_cl} | Đuôi C/L: {st.session_state.u_cl}")
+        st.write(f"Tổng C/L: {st.session_state.t_cl} | Thường/Hệ: {st.session_state.so_he}")
+    with c50[1]:
+        st.write(f"Đầu B/T: {st.session_state.d_tb} | Đuôi B/T: {st.session_state.u_tb}")
+        st.write(f"Tổng B/T: {st.session_state.t_tb} | Hiệu B/T: {st.session_state.h_tb}")
 
 with t3:
-    st.markdown("<div class='section-title'>KIỂM TRA ĐIỂM THƯỞNG THEO ROOT</div>", unsafe_allow_html=True)
-    for n, r_v in [("NGÀY", st.session_state.rd), ("KỲ", st.session_state.rk), ("GĐB", st.session_state.rg)]:
-        if r_v in ROOT_DATA:
-            st.write(f"**MÃ ROOT {n}: {r_v}**")
-            check = {cat: [ROOT_DATA[r_v][cat].index(i) for i in range(10)] for cat in ["đầu","đuôi","tổng","hiệu","chạm"]}
-            st.table(pd.DataFrame(check, index=[str(x) for x in range(10)]).T)
+    st.write("**KIỂM TRA ĐIỂM THƯỞNG THEO ROOT**")
+    for n, rv in [("NGÀY", st.session_state.rd), ("KỲ", st.session_state.rk), ("GĐB", st.session_state.rg)]:
+        if rv in ROOT_DATA:
+            st.write(f"**MÃ ROOT {n}: {rv}**")
+            ck = {cat: [ROOT_DATA[rv][cat].index(i) for i in range(10)] for cat in ["đầu","đuôi","tổng","hiệu","chạm"]}
+            st.table(pd.DataFrame(ck, index=[str(x) for x in range(10)]).T)
 
 with t4:
     m_data = []
