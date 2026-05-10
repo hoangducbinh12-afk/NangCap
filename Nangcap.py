@@ -4,17 +4,14 @@ import json
 from datetime import datetime
 
 # --- 1. CẤU HÌNH GIAO DIỆN ---
-st.set_page_config(page_title="18 BIẾN PRO - TOÀN DIỆN", layout="centered")
+st.set_page_config(page_title="18 BIẾN PRO - FULL BẢNG A", layout="centered")
 
 st.markdown("""
     <style>
-    .block-container { max-width: 600px !important; padding-top: 1rem !important; }
+    .block-container { max-width: 650px !important; padding-top: 1rem !important; }
     .main-title { text-align: center; color: #1E3A8A; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-    .stTable td, .stTable th { font-size: 10px !important; padding: 2px !important; text-align: center !important; font-weight: bold !important; border: 1px solid #eee !important; }
-    .dan-box-1 { background-color: #e8f5e9; padding: 10px; border-radius: 5px; color: #2e7d32; font-family: monospace; font-size: 13px; font-weight: bold; border: 1px solid #c8e6c9; margin-top: 5px; }
-    .dan-box-2 { background-color: #e3f2fd; padding: 10px; border-radius: 5px; color: #1565c0; font-family: monospace; font-size: 13px; font-weight: bold; border: 1px solid #bbdefb; margin-top: 5px; }
+    .stTable td, .stTable th { font-size: 11px !important; padding: 3px !important; text-align: center !important; font-weight: bold !important; border: 1px solid #eee !important; }
     .root-display { font-size: 11px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff5f5; padding: 6px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ffe3e3; }
-    .history-container { overflow-x: auto; white-space: nowrap; border: 1px solid #ddd; padding: 5px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 10px; }
     </style>
     <html lang="vi" class="notranslate" translate="no"></html>
     """, unsafe_allow_html=True)
@@ -52,7 +49,7 @@ def find_idx(n, mapping):
         if n in nums: return i
     return -1
 
-# --- 4. KHỞI TẠO SESSION STATE ---
+# --- 4. KHỞI TẠO STATE ---
 if 'dau' not in st.session_state:
     for k in ['dau','duoi','tong','hieu','cham']: st.session_state[k] = [0]*10
     st.session_state.bo = [0]*15; st.session_state.giap = [0]*12
@@ -68,7 +65,6 @@ def get_full_matrix():
     res = []
     for i in range(100):
         d, du, t, h = i//10, i%10, (i//10+i%10)%10, (i//10-i%10+10)%10
-        # Khan
         sk = st.session_state.dau[d]+st.session_state.duoi[du]+st.session_state.tong[t]+st.session_state.hieu[h]+ \
              ((st.session_state.cham[d]*2) if d==du else (st.session_state.cham[d]+st.session_state.cham[du]))+ \
              st.session_state.bo[find_idx(i, BO_MAP)]+st.session_state.giap[find_idx(i, GIAP_12)]+ \
@@ -77,7 +73,6 @@ def get_full_matrix():
              st.session_state.d_tb[1 if d>=5 else 0]+st.session_state.u_tb[1 if du>=5 else 0]+ \
              st.session_state.t_tb[1 if t>=5 else 0]+st.session_state.h_tb[1 if h>=5 else 0]+ \
              st.session_state.so_he[1 if i not in SO_THUONG else 0]
-        # Root
         def rs(r, cat, v): return ROOT_DATA[r][cat].index(v) if r in ROOT_DATA else 0
         sr = sum(rs(r, c, v) for r in [rd,rk,rg] for c, v in [("dau",d),("duoi",du),("tong",t),("hieu",h),("cham",d),("cham",du)])
         res.append({"s": f"{d}{du}", "d": sk + sr})
@@ -88,14 +83,8 @@ def cap_nhat_logic():
     if not raw or len(raw) < 2: return
     n = int(raw[-2:])
     dv, duv, tv, hv = n//10, n%10, (n//10+n%10)%10, (n//10-n%10+10)%10
-    
-    # Tính hạng trước khi cập nhật
-    m_data = get_full_matrix()
-    df_rank = pd.DataFrame(m_data).sort_values(by=["d", "s"]).reset_index(drop=True)
-    vị_tri = df_rank[df_rank['s'] == f"{n:02d}"].index[0] + 1
-    st.session_state.ls.insert(0, {"Số về": f"{n:02d}", "Vị trí": vị_tri, "Kỳ": st.session_state.ky_quay})
-    
-    # Cập nhật state
+    m_data = get_full_matrix(); df_rank = pd.DataFrame(m_data).sort_values(by=["d", "s"]).reset_index(drop=True)
+    st.session_state.ls.insert(0, {"Số về": f"{n:02d}", "Vị trí": df_rank[df_rank['s'] == f"{n:02d}"].index[0]+1, "Kỳ": st.session_state.ky_quay})
     st.session_state.rd, st.session_state.rk, st.session_state.rg = get_root_val(st.session_state.date_in), get_root_val(st.session_state.ky_quay), get_root_val(raw)
     for i in range(10):
         st.session_state.dau[i] = 0 if i==dv else st.session_state.dau[i]+1
@@ -118,34 +107,21 @@ def cap_nhat_logic():
     st.session_state.h_tb[1 if hv>=5 else 0]=0; st.session_state.h_tb[0 if hv>=5 else 1]+=1
 
 # --- 5. UI ---
-st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>💎 HỆ THỐNG 18 BIẾN PRO</h2>", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.header("⚙️ QUẢN LÝ")
-    if st.button("💾 LƯU CLOUD"):
-        st.session_state.db_cloud[datetime.now().strftime("%H:%M")] = {k: list(st.session_state[k]) if isinstance(st.session_state[k], list) else st.session_state[k] for k in st.session_state.keys() if k != 'db_cloud'}
-    if st.session_state.db_cloud:
-        sel = st.selectbox("Bản sao:", list(st.session_state.db_cloud.keys())[::-1])
-        if st.button("🚀 NẠP"):
-            for k, v in st.session_state.db_cloud[sel].items(): st.session_state[k] = v
-            st.rerun()
-    st.divider()
-    if st.button("❌ RESET ALL"): st.session_state.clear(); st.rerun()
+st.markdown("<h2 class='main-title'>💎 18 BIẾN PRO - FULL OPTION</h2>", unsafe_allow_html=True)
 
 # NHẬP LIỆU
 c1, c2, c3 = st.columns([1.5, 1.5, 1.8])
-with c1: st.text_input("GĐB vừa nổ:", value="000000", key="gdb_in")
+with c1: st.text_input("GĐB:", value="000000", key="gdb_in")
 with c2: st.text_input("Ngày:", datetime.now().strftime("%d%m%Y"), key="date_in")
-with c3: st.number_input("Kỳ quay:", value=st.session_state.ky_quay, key="ky_quay_widget", step=1)
-st.session_state.ky_quay = st.session_state.ky_quay_widget
+with c3: st.number_input("Kỳ quay:", value=st.session_state.ky_quay, key="ky_w", step=1)
+st.session_state.ky_quay = st.session_state.ky_w
 
-st.markdown(f"<div style='text-align:center; background:#fff5f5; padding:5px; border-radius:5px; border:1px solid #ffe3e3; font-weight:bold; color:#d32f2f;'>Root: Ngày {st.session_state.rd} | Kỳ {st.session_state.rk} | GĐB {st.session_state.rg}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='root-display'>Root: Ngày {st.session_state.rd} | Kỳ {st.session_state.rk} | GĐB {st.session_state.rg}</div>", unsafe_allow_html=True)
 st.button("🔥 CẬP NHẬT TỔNG LỰC", on_click=cap_nhat_logic, type="primary", use_container_width=True)
 
 tabs = st.tabs(["⚡ Dàn", "📊 Bảng A", "🎲 Bảng B", "🕒 Lịch Sử", "💾 Sao Lưu"])
 
-current_m = get_full_matrix()
-df_final = pd.DataFrame(current_m).sort_values(by=["d", "s"])
+current_m = get_full_matrix(); df_final = pd.DataFrame(current_m).sort_values(by=["d", "s"])
 
 with tabs[0]:
     cn1, cn2 = st.columns(2)
@@ -158,15 +134,40 @@ with tabs[0]:
 
 with tabs[1]:
     rd, rk, rg = st.session_state.rd, st.session_state.rk, st.session_state.rg
-    def show_r(lbl, k, cat, names):
+    def table_r(lbl, k, cat, cols):
         st.write(f"**{lbl}**")
-        kh, rt = st.session_state[k], [sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) if cat else 0 for i in range(len(st.session_state[k]))]
-        st.table(pd.DataFrame([kh, rt], columns=names, index=["K", "R"]))
-    for lbl, k, cat in [("DAU","dau","dau"),("DUOI","duoi","duoi"),("TONG","tong","tong"),("HIEU","hieu","hieu"),("CHAM","cham","cham")]: show_r(lbl, k, cat, range(10))
-    show_r("BO", "bo", None, list(BO_MAP.keys()))
-    show_r("GIAP", "giap", None, list(GIAP_12.keys()))
-    st.write("**8 BIẾN PHỤ**")
-    st.table(pd.DataFrame({"D_CL":st.session_state.d_cl, "U_CL":st.session_state.u_cl, "T_CL":st.session_state.t_cl, "HE":st.session_state.so_he, "D_TB":st.session_state.d_tb, "U_TB":st.session_state.u_tb, "T_TB":st.session_state.t_tb, "H_TB":st.session_state.h_tb}, index=["0","1"]))
+        kh = st.session_state[k]
+        rt = [sum(ROOT_DATA[r][cat].index(i) if r in ROOT_DATA else 0 for r in [rd,rk,rg]) if cat else 0 for i in range(len(kh))]
+        st.table(pd.DataFrame([kh, rt], columns=cols, index=["K", "R"]))
+
+    # Các biến chính
+    for l, k, c in [("ĐẦU","dau","dau"),("ĐUÔI","duoi","duoi"),("TỔNG","tong","tong"),("HIỆU","hieu","hieu"),("CHẠM","cham","cham")]: 
+        table_r(l, k, c, range(10))
+    
+    # Bộ và Giáp
+    table_r("BỘ (15)", "bo", None, list(BO_MAP.keys()))
+    table_r("GIÁP (12)", "giap", None, list(GIAP_12.keys()))
+    
+    # 5 Dạng và 13 Biến thể (Dạng kép/cách, Chẵn lẻ 4, Bé to 4)
+    st.write("**5 DẠNG KÉP/CÁCH**")
+    st.table(pd.DataFrame([st.session_state.dang5], columns=list(DANG_5.keys()), index=["K"]))
+    
+    col_v1, col_v2 = st.columns(2)
+    with col_v1:
+        st.write("**CHẴN LẺ 4**")
+        st.table(pd.DataFrame([st.session_state.cl4], columns=list(CL_4.keys()), index=["K"]))
+    with col_v2:
+        st.write("**BÉ TO 4**")
+        st.table(pd.DataFrame([st.session_state.bt4], columns=list(BT_4.keys()), index=["K"]))
+
+    # 8 Biến phụ
+    st.write("**8 BIẾN PHỤ (50/50)**")
+    phu_data = {
+        "ĐẦU C/L": st.session_state.d_cl, "ĐUÔI C/L": st.session_state.u_cl, "TỔNG C/L": st.session_state.t_cl,
+        "HỆ SỐ": st.session_state.so_he, "ĐẦU B/T": st.session_state.d_tb, "ĐUÔI B/T": st.session_state.u_tb,
+        "TỔNG B/T": st.session_state.t_tb, "HIỆU B/T": st.session_state.h_tb
+    }
+    st.table(pd.DataFrame(phu_data, index=["0 (Bé/Chẵn/Thường)", "1 (To/Lẻ/Hệ)"]))
 
 with tabs[2]:
     m_vals = [[next(x['d'] for x in current_m if x['s'] == f"{d}{du}") for du in range(10)] for d in range(10)]
@@ -174,15 +175,15 @@ with tabs[2]:
 
 with tabs[3]:
     if st.session_state.ls: st.table(pd.DataFrame(st.session_state.ls))
-    else: st.info("Chưa có dữ liệu.")
+    else: st.info("Chưa có lịch sử.")
 
 with tabs[4]:
-    st.subheader("💾 Quản lý Dữ liệu")
+    st.subheader("💾 Quản lý")
     sv = {k: st.session_state[k] for k in ['dau','duoi','tong','hieu','cham','bo','giap','dang5','cl4','bt4','d_cl','u_cl','t_cl','so_he','d_tb','u_tb','t_tb','h_tb','ls','ky_quay','rd','rk','rg']}
-    st.download_button("📥 TẢI DỮ LIỆU", data=json.dumps(sv), file_name="backup.json")
-    up = st.file_uploader("📤 UPLOAD", type="json")
-    if up and st.button("🚀 XÁC NHẬN"):
+    st.download_button("📥 TẢI DỮ LIỆU (.json)", data=json.dumps(sv), file_name="backup_18bien.json", use_container_width=True)
+    up = st.file_uploader("📤 UPLOAD DỮ LIỆU", type="json")
+    if up and st.button("🚀 XÁC NHẬN KHÔI PHỤC"):
         ld = json.load(up)
         for k, v in ld.items():
-            if k not in ['gdb_in', 'date_in', 'ky_quay_widget', 'n1_w', 'n2_w']: st.session_state[k] = v
+            if k not in ['gdb_in', 'date_in', 'ky_w', 'n1_w', 'n2_w']: st.session_state[k] = v
         st.rerun()
